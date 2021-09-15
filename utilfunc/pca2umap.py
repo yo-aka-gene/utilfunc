@@ -78,8 +78,7 @@ def umap_sep(data:pd.core.frame.DataFrame,
             v,
             index = data.index,
             columns = [
-                f'UMAP{e+1} \
-                    (min_dist={min_dist[i % len_min_dist]}, n_nbr={n_nbr[i // len_min_dist]})' for e in range(n_components)
+                f'UMAP{e+1} (min_dist={min_dist[i % len_min_dist]}, n_nbr={n_nbr[i // len_min_dist]})' for e in range(n_components)
                 ]
         )
         for i, v in enumerate(df_umap)
@@ -102,7 +101,7 @@ def umap_viz(
     aspect: Union[str, Tuple[int]] = _umap_val().subplots,
     figsize: tuple = (3, 3),
     mini: bool = False,
-    title: str = "",
+    title: List[str] = _umap_val().title,
     cbar_label: str = ""
 ):
     data_scale = data_scale if type(target)==str or type(target)==type(None) else target
@@ -116,8 +115,9 @@ def umap_viz(
     if mini:
         fig, ax = plt.subplots(figsize = figsize)
         data[0].plot.scatter(x=0, y=1, ax=ax,
-                             title = title,
+                             title = title[0],
                              colorbar = False,
+                             xlabel = "UMAP1", ylabel = "UMAP2",
                              **_kwarg)
         if type(target) != type(None):
             cbar = plt.colorbar(
@@ -150,6 +150,9 @@ def umap_viz(
             v.plot.scatter(x=0, y=1,
                            ax = ax[i//n_h, i%n_h],
                            colorbar = not uni_cbar,
+                           title = title[i],
+                           xlabel = "UMAP1",
+                           ylabel = "UMAP2",
                            **_kwarg)
         
             if uni_cbar and type(target) != type(None):
