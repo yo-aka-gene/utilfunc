@@ -11,6 +11,9 @@ from sklearn.decomposition import PCA
 import umap
 
 from scipy.sparse.csgraph import connected_components
+from ._subplotmgr import list2subplot
+from ._defacto_val import _umap_val
+from typing import List, Union, Tuple
 
 
 # In[2]:
@@ -18,7 +21,7 @@ from scipy.sparse.csgraph import connected_components
 
 def pre_pca(data:pd.core.frame.DataFrame,
             random_state:int = 0,
-            req_cont:int = 80):
+            req_cont:int = 80) -> pd.core.frame.DataFrame:
     
     model = PCA(random_state=random_state)
     
@@ -49,26 +52,35 @@ def pre_pca(data:pd.core.frame.DataFrame,
 def umap_sep(data:pd.core.frame.DataFrame,
              random_state:int = 0,
              n_components:int = 2,
-             min_dist:float = 0.1,
+             min_dist:List[float] = _umap_val().min_dist,
              metric:str = "euclidean",
-             n_nbr:list = [10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 100]):
+             n_nbr:List[int] = _umap_val().n_nbr) -> List[pd.core.frame.DataFrame]:
     
     umap_arg = {
         'random_state': random_state,
         'n_components': n_components,
-        'min_dist': min_dist,
         'metric': metric
     }
+    len_min_dist = len(min_dist)
+    len_n_nbr = len(n_nbr)
+    n_combi = len_min_dist * len_n_nbr
     
-    model_umap = [umap.UMAP(n_neighbors = i, **umap_arg) for i in n_nbr]
+    model_umap = [umap.UMAP(
+        min_dist = min_dist[i % len_min_dist],
+        n_neighbors = n_nbr[i // len_min_dist],
+        **umap_arg
+    ) for i in range(n_combi)]
     
-    df_umap = [i.fit_transform(data) for i in model_umap]
+    df_umap = [model.fit_transform(data) for model in model_umap]
     
     df_umap_sep = [
         pd.DataFrame(
             v,
             index = data.index,
-            columns = [f'UMAP{e+1} (n_nbr={n_nbr[i]})' for e in range(n_components)])
+            columns = [
+                f'UMAP{e+1} (min_dist={min_dist[i % len_min_dist]}, n_nbr={n_nbr[i // len_min_dist]})' for e in range(n_components)
+                ]
+        )
         for i, v in enumerate(df_umap)
     ]
     return df_umap_sep 
@@ -86,9 +98,10 @@ def umap_viz(
     data_scale: pd.core.frame.DataFrame = pd.DataFrame(),
     cax: list = [0.925, 0.15, 0.02, 0.1],
     alpha: int or float = 1,
+    aspect: Union[str, Tuple[int]] = _umap_val().subplots,
     figsize: tuple = (3, 3),
     mini: bool = False,
-    title: str = "",
+    title: List[str] = _umap_val().title,
     cbar_label: str = ""
 ):
     data_scale = data_scale if type(target)==str or type(target)==type(None) else target
@@ -102,8 +115,9 @@ def umap_viz(
     if mini:
         fig, ax = plt.subplots(figsize = figsize)
         data[0].plot.scatter(x=0, y=1, ax=ax,
-                             title = title,
+                             title = title[0],
                              colorbar = False,
+                             xlabel = "UMAP1", ylabel = "UMAP2",
                              **_kwarg)
         if type(target) != type(None):
             cbar = plt.colorbar(
@@ -115,10 +129,16 @@ def umap_viz(
                     label = f"{target} $[\log_2(TPM+1)]$" if type(target)==str else cbar_label
                 )
     else:
-        n_v, n_h = (
-            int(np.ceil(len(data)/np.floor(np.sqrt(len(data))))),
-            int(np.floor(np.sqrt(len(data))))
-        )
+        if isinstance(aspect, str):
+            assert aspect == "landscape" or aspect == "portrait", \
+                f"aspect expected either of 'landscape', 'portrait', or tuple of designated values; got{aspect}"
+            landscape = True if aspect == "landscape" else False
+            ret = list2subplot(l_df=data, figsize=figsize, landscape=landscape)
+            n_v, n_h = ret["n_rows"], ret["n_cols"]
+        else:
+            assert isinstance(aspect, tuple), \
+                f"aspect expected either of 'landscape', 'portrait', or tuple of designated values; got{aspect}"
+            n_v, n_h = aspect
         
         fig, ax = plt.subplots(
             n_v, n_h,
@@ -130,6 +150,9 @@ def umap_viz(
             v.plot.scatter(x=0, y=1,
                            ax = ax[i//n_h, i%n_h],
                            colorbar = not uni_cbar,
+                           title = title[i],
+                           xlabel = "UMAP1",
+                           ylabel = "UMAP2",
                            **_kwarg)
         
             if uni_cbar and type(target) != type(None):
