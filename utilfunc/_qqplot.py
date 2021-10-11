@@ -1,4 +1,3 @@
-from _typeshed import NoneType
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -30,7 +29,7 @@ def qqplot(
             df.iloc[:, i].sort_values(ascending=True)
             ).assign(quantile_val = quantile_val[i]) for i in range(df.shape[1])
             ]
-    if isinstance(ax, NoneType):
+    if ax is None:
         fig, ax = plt.subplots(**spm(df, figsize))
     plt.subplots_adjust(wspace=wspace, hspace=hspace)
     ncols = spm(df, figsize)["ncols"]
