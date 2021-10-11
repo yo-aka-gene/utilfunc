@@ -33,7 +33,7 @@ def qqplot(
     if ax is None:
         fig, ax = plt.subplots(**spm(df, figsize, landscape))
     plt.subplots_adjust(wspace=wspace, hspace=hspace)
-    ncols = spm(df, figsize)["ncols"]
+    ncols = spm(df, figsize, landscape)["ncols"]
 
     for i, v in enumerate(data_qq):
         ax[i//ncols, i%ncols].plot(
