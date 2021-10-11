@@ -7,6 +7,7 @@ from ._subplotmgr import subplotmgr as spm
 
 def qqplot(
     df: pd.core.frame.DataFrame,
+    ax: plt.axes = None,
     figsize: tuple = (5, 5),
     wspace: float = 0.3,
     hspace: float = 0.3
@@ -28,8 +29,8 @@ def qqplot(
             df.iloc[:, i].sort_values(ascending=True)
             ).assign(quantile_val = quantile_val[i]) for i in range(df.shape[1])
             ]
-    
-    fig, ax = plt.subplots(**spm(df, figsize))
+    if ax == None:
+        fig, ax = plt.subplots(**spm(df, figsize))
     plt.subplots_adjust(wspace=wspace, hspace=hspace)
     ncols = spm(df, figsize)["ncols"]
 
