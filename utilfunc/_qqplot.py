@@ -10,7 +10,8 @@ def qqplot(
     ax: plt.axes = None,
     figsize: tuple = (5, 5),
     wspace: float = 0.3,
-    hspace: float = 0.3
+    hspace: float = 0.3,
+    landscape: bool = False
     ):
     assert isinstance(df, pd.core.frame.DataFrame), \
         f"df expected pandas.core.frame.DataFrame, got {type(df)}"
@@ -30,7 +31,7 @@ def qqplot(
             ).assign(quantile_val = quantile_val[i]) for i in range(df.shape[1])
             ]
     if ax is None:
-        fig, ax = plt.subplots(**spm(df, figsize))
+        fig, ax = plt.subplots(**spm(df, figsize, landscape))
     plt.subplots_adjust(wspace=wspace, hspace=hspace)
     ncols = spm(df, figsize)["ncols"]
 
